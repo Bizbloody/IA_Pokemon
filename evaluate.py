@@ -1,15 +1,15 @@
 import torch
 from Model import PokemonClassifier, get_resnet_model
 from preprocessing import get_pokemon_data
-import preprocessing23
+from preprocessing23 import get_train_test_loaders
 
 
-def evaluate_model(dataset_dir, model_path, batch_size=32, transfer_learning=False, dataset_separation=True):
+def evaluate_model(dataset_dir, model_path, train_loader, number_classes, batch_size=32, transfer_learning=False, dataset_separation=True):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Load dataset and model
     if dataset_separation:
-        pokemon_loader, num_classes = test.test_loader, test.test_size
+        pokemon_loader, num_classes = train_loader, number_classes
     else:
         pokemon_loader, num_classes = get_pokemon_data(dataset_dir, batch_size)
     # Initialize the model, loss function, and optimizer
@@ -35,6 +35,7 @@ def evaluate_model(dataset_dir, model_path, batch_size=32, transfer_learning=Fal
     accuracy = 100 * correct / total
     print(f'Accuracy: {accuracy:.2f}%')
 
+    return accuracy
 
 if __name__ == '__main__':
     dataset_dir = 'archive/dataset'

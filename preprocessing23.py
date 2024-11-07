@@ -1,41 +1,43 @@
-from torch.utils.data import random_split, DataLoader
+from torch.utils.data import DataLoader, SubsetRandomSampler
 from torchvision import transforms, datasets
-
+import numpy as np
 
 dataset_dir = 'archive/dataset'
 
 
-# Define data transformations for training and testing
-train_transforms = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.RandomHorizontalFlip(p=0.5),
-    transforms.RandomRotation(20),
-    transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),
-    transforms.RandomGrayscale(p=0.2),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
-])
+def get_train_test_loaders(dataset_dir, batch_size, train_ratio=0.7):
+    # Define data transformations
+    preprocess_pipeline = transforms.Compose([
+        # transforms.RandomApply(torch.nn.ModuleList([
+        #     transforms.GaussianBlur(kernel_size=13, sigma=(32, 48)),
+        # ]), p=0.5),
+        transforms.Resize((224, 224)),  # Resize to 224x224
+        transforms.RandomHorizontalFlip(p=0.2),  # Random horizontal flip
+        transforms.RandomRotation(20),  # Random rotation between -15° and 15°
+        transforms.ColorJitter(brightness=0.1, contrast=0.1),  # Adjust brightness and contrast
+        transforms.RandomGrayscale(p=0.2),  # Convert to grayscale
+        transforms.ToTensor(),  # Convert to tensor
+        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])  # Normalize (for RGB images)
+    ])
 
-test_transforms = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
-])
+    # Load full dataset
+    dataset = datasets.ImageFolder(root=dataset_dir, transform=preprocess_pipeline)
+    num_images = len(dataset)
 
-# Load dataset and apply transformations
-dataset = datasets.ImageFolder(root=dataset_dir)
+    # Prepare indices and shuffle them
+    indices = list(range(num_images))
+    np.random.shuffle(indices)
 
-# Calculate sizes for train and test split
-train_size = int(0.67 * len(dataset))
-test_size = len(dataset) - train_size
+    # Compute split indices
+    train_size = int(train_ratio * num_images)
+    train_indices, test_indices = indices[:train_size], indices[train_size:]
 
-# Split the dataset into train and test subsets
-train_dataset, test_dataset = random_split(dataset, [train_size, test_size])
+    # Create samplers
+    train_sampler = SubsetRandomSampler(train_indices)
+    test_sampler = SubsetRandomSampler(test_indices)
 
-# Apply respective transformations
-train_dataset.dataset.transform = train_transforms
-test_dataset.dataset.transform = test_transforms
+    # Data loaders
+    train_loader = DataLoader(dataset, batch_size=batch_size, sampler=train_sampler)
+    test_loader = DataLoader(dataset, batch_size=batch_size, sampler=test_sampler)
 
-# Create data loaders
-train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True, num_workers=4)
-test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False, num_workers=4)
+    return train_loader, test_loader, len(dataset.classes)

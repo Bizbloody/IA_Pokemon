@@ -1,20 +1,18 @@
 import torch
-
-import preprocessing23
 from Model import PokemonClassifier, get_resnet_model
 from preprocessing import get_pokemon_data
-from preprocessing23 import train_dataset, train_loader
+from preprocessing23 import get_train_test_loaders
 import torch.optim as optim
 import torch.nn as nn
 import time
 
 
-def train_model(dataset_dir, num_epochs=100, batch_size=64, lr=0.001, transfer_learning=False, dataset_separation=True):
+def train_model(dataset_dir, model_name, train_loader, number_classes, num_epochs=100, batch_size=64, lr=0.001, transfer_learning=False, dataset_separation=True):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Get data and class count
     if dataset_separation:
-        pokemon_loader, num_classes = train_loader, test.train_size
+        pokemon_loader, num_classes = train_loader, number_classes
     else:
         pokemon_loader, num_classes = get_pokemon_data(dataset_dir, batch_size)
 
@@ -65,8 +63,8 @@ def train_model(dataset_dir, num_epochs=100, batch_size=64, lr=0.001, transfer_l
         print(f'Epoch [{epoch + 1}/{num_epochs}], Duration: {end_time - start_time:.2f} seconds')
 
     # Save the model
-    torch.save(model.state_dict(), 'pokemon_classifier120.0520.pth')
-    print("Model saved as pokemon_classifier120.0520.pth")
+    torch.save(model.state_dict(), model_name)
+    print(f"Model saved as {model_name}")
 
 
 if __name__ == '__main__':
