@@ -7,7 +7,7 @@ import torch.nn as nn
 import time
 
 
-def train_model(dataset_dir, model_name, train_loader, number_classes, num_epochs=100, batch_size=64, lr=0.001, transfer_learning=False, dataset_separation=True):
+def train_model(dataset_dir, model_name, train_loader, number_classes, num_epochs=200, batch_size=64, lr=0.001, transfer_learning=False, dataset_separation=True):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Get data and class count

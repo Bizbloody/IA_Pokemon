@@ -13,7 +13,7 @@ def get_train_test_loaders(dataset_dir, batch_size, train_ratio=0.7):
         # ]), p=0.5),
         transforms.Resize((224, 224)),  # Resize to 224x224
         transforms.RandomHorizontalFlip(p=0.2),  # Random horizontal flip
-        transforms.RandomRotation(20),  # Random rotation between -15° and 15°
+        transforms.RandomRotation(20),  # Random rotation between -20° and 20°
         transforms.ColorJitter(brightness=0.1, contrast=0.1),  # Adjust brightness and contrast
         transforms.RandomGrayscale(p=0.2),  # Convert to grayscale
         transforms.ToTensor(),  # Convert to tensor
