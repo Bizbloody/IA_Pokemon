@@ -1,10 +1,11 @@
 import torch
 from sklearn.cluster import KMeans
-from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
+from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score, accuracy_score
+from sklearn.decomposition import PCA
+from scipy.optimize import linear_sum_assignment
 import numpy as np
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
-from scipy.optimize import linear_sum_assignment  # For optimal label matching
 
 
 def extract_features(dataset_loader, feature_extractor, device):
@@ -26,9 +27,20 @@ def extract_features(dataset_loader, feature_extractor, device):
     return features, ground_truth_labels
 
 
+def apply_pca(features, n_components=50):
+    """
+    Reduces dimensionality of features using PCA.
+    """
+    pca = PCA(n_components=n_components)
+    reduced_features = pca.fit_transform(features)
+    explained_variance = np.sum(pca.explained_variance_ratio_) * 100
+    print(f"PCA Explained Variance: {explained_variance:.2f}%")
+    return reduced_features
+
+
 def calculate_accuracy(cluster_labels, ground_truth_labels):
     """
-    Calculates accuracy using the Hungarian algorithm to map cluster labels to ground truth labels.
+    Calculates accuracy , map cluster labels to ground truth labels.
     """
     # Create a confusion matrix
     num_classes = len(set(ground_truth_labels))
@@ -37,7 +49,7 @@ def calculate_accuracy(cluster_labels, ground_truth_labels):
     for gt_label, cluster_label in zip(ground_truth_labels, cluster_labels):
         confusion_matrix[gt_label, cluster_label] += 1
 
-    # Find the best mapping using Hungarian algorithm
+    # Find the best mapping
     row_ind, col_ind = linear_sum_assignment(-confusion_matrix)  # Maximize matching
 
     # Compute accuracy
@@ -48,7 +60,7 @@ def calculate_accuracy(cluster_labels, ground_truth_labels):
     return accuracy
 
 
-def kmeans_clustering_on_ground_truth(dataset_dir, batch_size=32):
+def kmeans_clustering_on_ground_truth(dataset_dir, batch_size=32, n_components=50):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Define dataset transformation pipeline
@@ -58,7 +70,7 @@ def kmeans_clustering_on_ground_truth(dataset_dir, batch_size=32):
         transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
     ])
 
-    # Load the entire dataset
+    # Load the entire dataset 
     full_dataset = datasets.ImageFolder(root=dataset_dir, transform=transform)
 
     # Create DataLoader
@@ -72,10 +84,13 @@ def kmeans_clustering_on_ground_truth(dataset_dir, batch_size=32):
     # Extract features and ground-truth labels
     features, ground_truth_labels = extract_features(data_loader, feature_extractor, device)
 
+    # Apply PCA
+    reduced_features = apply_pca(features, n_components)
+
     # Perform K-means clustering
     num_clusters = len(set(ground_truth_labels))  # Number of unique classes in the dataset
     kmeans = KMeans(n_clusters=num_clusters, random_state=42)
-    cluster_labels = kmeans.fit_predict(features)
+    cluster_labels = kmeans.fit_predict(reduced_features)
 
     # Evaluate clustering
     ari = adjusted_rand_score(ground_truth_labels, cluster_labels)
@@ -93,7 +108,7 @@ if __name__ == '__main__':
     dataset_dir = 'archive/dataset'  # Path to your dataset
 
     cluster_labels, ground_truth_labels, ari, nmi, accuracy = kmeans_clustering_on_ground_truth(
-        dataset_dir
+        dataset_dir, n_components=100
     )
 
     print("Cluster Labels:", cluster_labels)
