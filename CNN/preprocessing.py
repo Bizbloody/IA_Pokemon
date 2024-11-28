@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import os
 
 # Path to the dataset
-dataset_dir = 'archive/dataset'
+dataset_dir = '../archive/dataset'
 
 
 #
@@ -69,9 +69,9 @@ def load_image(image_path):
 
 def get_pokemon_data(dataset_dir, batch_size):
     preprocess_pipeline = transforms.Compose([
-        # transforms.RandomApply(torch.nn.ModuleList([
-        #     transforms.GaussianBlur(kernel_size=13, sigma=(32, 48)),
-        # ]), p=0.5),
+        transforms.RandomApply(torch.nn.ModuleList([
+            transforms.GaussianBlur(kernel_size=13, sigma=(32, 48)), transforms.RandomResizedCrop(224, scale=(0.8, 1.0), ratio=(3/4, 4/3))
+        ]), p=0.5),
         transforms.Resize((224, 224)),  # Resize to 224x224
         transforms.RandomHorizontalFlip(p=0.2),  # Random horizontal flip
         transforms.RandomRotation(20),  # Random rotation between -15° and 15°
@@ -83,7 +83,7 @@ def get_pokemon_data(dataset_dir, batch_size):
 
     dataset = datasets.ImageFolder(root=dataset_dir, transform=preprocess_pipeline)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=4)
-    return dataloader, len(dataset.classes)
+    return dataloader, dataset.classes
 
 
 def visualize_batch(data_loader, classes, batch_size=8):
@@ -104,7 +104,7 @@ def visualize_batch(data_loader, classes, batch_size=8):
 
 if __name__ == '__main__':
     # Your main code execution
-    dataset_dir = 'archive/dataset'  # replace with actual path
+    dataset_dir = '../archive/dataset'  # replace with actual path
     batch_size = 64
 
     dataloader, classes = get_pokemon_data(dataset_dir, batch_size=64)

@@ -1,23 +1,25 @@
 from torch.utils.data import DataLoader, SubsetRandomSampler
 from torchvision import transforms, datasets
+from torch import nn
 import numpy as np
 
-dataset_dir = 'archive/dataset'
+dataset_dir = '../archive/dataset'
 
 
 def get_train_test_loaders(dataset_dir, batch_size, train_ratio=0.7):
     # Define data transformations
     preprocess_pipeline = transforms.Compose([
-        # transforms.RandomApply(torch.nn.ModuleList([
-        #     transforms.GaussianBlur(kernel_size=13, sigma=(32, 48)),
-        # ]), p=0.5),
-        transforms.Resize((224, 224)),  # Resize to 224x224
-        transforms.RandomHorizontalFlip(p=0.2),  # Random horizontal flip
-        transforms.RandomRotation(20),  # Random rotation between -20° and 20°
-        transforms.ColorJitter(brightness=0.1, contrast=0.1),  # Adjust brightness and contrast
-        transforms.RandomGrayscale(p=0.2),  # Convert to grayscale
+        transforms.RandomResizedCrop(224, scale=(0.8, 1.0), ratio=(3 / 4, 4 / 3)),  # Crop before resize for variability
+        transforms.RandomApply(nn.ModuleList([
+            transforms.GaussianBlur(kernel_size=5, sigma=(0.1, 2.0)),
+        ]), p=0.5),  # Apply blur after cropping for better edge preservation
+        transforms.RandomRotation(20),  # Rotate before resizing to prevent distortion
+        transforms.Resize((224, 224)),  # Resize to standard dimensions
+        transforms.RandomHorizontalFlip(p=0.2),  # Flip for horizontal variability
+        transforms.ColorJitter(brightness=0.1, contrast=0.1),  # Adjust brightness/contrast
+        transforms.RandomGrayscale(p=0.2),  # Occasionally convert to grayscale
         transforms.ToTensor(),  # Convert to tensor
-        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])  # Normalize (for RGB images)
+        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])  # Normalize
     ])
 
     # Load full dataset

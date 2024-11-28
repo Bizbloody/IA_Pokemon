@@ -7,7 +7,7 @@ import torch.nn as nn
 import time
 
 
-def train_model(dataset_dir, model_name, train_loader, number_classes, num_epochs=200, batch_size=64, lr=0.001, transfer_learning=False, dataset_separation=True):
+def train_model(dataset_dir, model_name, train_loader, val_loader, number_classes, num_epochs=100, batch_size=64, lr=0.001, transfer_learning=True, dataset_separation=True):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Get data and class count
@@ -24,18 +24,24 @@ def train_model(dataset_dir, model_name, train_loader, number_classes, num_epoch
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=1e-5)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)  # Decay LR every 10 epochs
-    # scheduler = ReduceLROnPlateau(optimizer, 'min', patience=5, factor=0.5)  # Alternatively, based on loss plateau
+
+    # Choose scheduler: StepLR or ReduceLROnPlateau
+    use_plateau_scheduler = True  # Set to False if you want to use StepLR
+    if use_plateau_scheduler:
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=5, factor=0.5,
+                                                               verbose=True)
+    else:
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
 
     for epoch in range(num_epochs):
         start_time = time.time()
         print(f"Starting epoch {epoch + 1}/{num_epochs}...")
+
+        # Training phase
         model.train()
         running_loss = 0.0
-
         batch_start_time = time.time()
 
-        # Iterate over batches
         for batch_idx, (images, labels) in enumerate(pokemon_loader):
             images, labels = images.to(device), labels.to(device)
 
@@ -47,20 +53,37 @@ def train_model(dataset_dir, model_name, train_loader, number_classes, num_epoch
 
             running_loss += loss.item()
 
-            # Check if 10 batches have completed
+            # Print batch time every 10 batches
             if (batch_idx + 1) % 10 == 0:
                 batch_end_time = time.time()
                 elapsed_time = batch_end_time - batch_start_time
                 print(f"Batch {batch_idx + 1}: Time for last 10 batches: {elapsed_time:.2f} seconds")
-
-                # Reset the timer for the next 10 batches
                 batch_start_time = time.time()
 
-        scheduler.step(running_loss / len(pokemon_loader) if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau) else None) # Update learning rate
+        avg_train_loss = running_loss / len(pokemon_loader)
+        print(f"Epoch [{epoch + 1}/{num_epochs}], Train Loss: {avg_train_loss:.4f}")
+
+        # Validation phase (required for ReduceLROnPlateau)
+        if use_plateau_scheduler:
+            model.eval()
+            val_loss = 0.0
+            with torch.no_grad():
+                for images, labels in val_loader:  # Assuming `val_loader` is your validation DataLoader
+                    images, labels = images.to(device), labels.to(device)
+                    outputs = model(images)
+                    loss = criterion(outputs, labels)
+                    val_loss += loss.item()
+            avg_val_loss = val_loss / len(val_loader)
+            print(f"Epoch [{epoch + 1}/{num_epochs}], Validation Loss: {avg_val_loss:.4f}")
+
+            # Update learning rate based on validation loss
+            scheduler.step(avg_val_loss)
+        else:
+            # Update learning rate for StepLR
+            scheduler.step()
 
         end_time = time.time()
-        print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {running_loss / len(pokemon_loader):.4f}')
-        print(f'Epoch [{epoch + 1}/{num_epochs}], Duration: {end_time - start_time:.2f} seconds')
+        print(f"Epoch [{epoch + 1}/{num_epochs}], Duration: {end_time - start_time:.2f} seconds")
 
     # Save the model
     torch.save(model.state_dict(), model_name)
@@ -69,5 +92,5 @@ def train_model(dataset_dir, model_name, train_loader, number_classes, num_epoch
 
 if __name__ == '__main__':
     print("CUDA available:", torch.cuda.is_available())
-    dataset_dir = 'archive/dataset'
+    dataset_dir = '../archive/dataset'
     train_model(dataset_dir)

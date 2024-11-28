@@ -4,7 +4,7 @@ from preprocessing import get_pokemon_data
 from preprocessing23 import get_train_test_loaders
 
 
-def evaluate_model(dataset_dir, model_path, train_loader, number_classes, batch_size=32, transfer_learning=False, dataset_separation=True):
+def evaluate_model(dataset_dir, model_path, train_loader, number_classes, batch_size=32, transfer_learning=True, dataset_separation=True):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Load dataset and model
@@ -38,6 +38,6 @@ def evaluate_model(dataset_dir, model_path, train_loader, number_classes, batch_
     return accuracy
 
 if __name__ == '__main__':
-    dataset_dir = 'archive/dataset'
+    dataset_dir = '../archive/dataset'
     model_path = 'pokemon_classifier120.0520.pth'
     evaluate_model(dataset_dir, model_path)
