@@ -1,6 +1,6 @@
 from train import train_model
 from evaluate import evaluate_model
-from preprocessing23 import get_train_test_loaders
+from preprocessing_CNN import get_train_test_loaders
 
 
 dataset_dir = '../archive/dataset'

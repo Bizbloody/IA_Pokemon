@@ -1,7 +1,7 @@
 import torch
 from Model import PokemonClassifier, get_resnet_model
-from preprocessing import get_pokemon_data
-from preprocessing23 import get_train_test_loaders
+from image_show import get_pokemon_data
+from preprocessing_CNN import get_train_test_loaders
 import torch.optim as optim
 import torch.nn as nn
 import time

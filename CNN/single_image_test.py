@@ -51,7 +51,7 @@ class PokemonClassifier(nn.Module):
 # Load the saved model
 num_classes = 149  # Adjust to match the number of classes you trained the model on
 model = PokemonClassifier(num_classes=num_classes)
-model.load_state_dict(torch.load('pokemon_classifier100.2309.pth'))
+model.load_state_dict(torch.load('**model_name**'))
 model.eval()  # Set model to evaluation mode
 
 # Define the same transformation pipeline used in training
